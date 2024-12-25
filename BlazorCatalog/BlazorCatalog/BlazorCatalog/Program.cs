@@ -1,11 +1,20 @@
-using BlazorCatalog.Client.Pages;
 using BlazorCatalog.Components;
+using BlazorCatalog.Context;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+{ 
+    options.UseSqlServer(builder.Configuration
+        .GetConnectionString("DefaultConnection"));
+});
+
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
@@ -29,5 +38,7 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(BlazorCatalog.Client._Imports).Assembly);
+
+app.MapControllers();
 
 app.Run();

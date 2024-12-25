@@ -1,0 +1,44 @@
+﻿@page "/categories/create"
+@inject HttpClient client;
+@inject NavigationManager navigation;
+@inject IJSRuntime js;
+
+<h2>New Category</h2>
+
+<CategoryForm Category="@category" OnValidSubmit="@CreateCategory"
+              ButtonTextSubmit="Save" ButtonTextCancel="Cancel">
+</CategoryForm>
+
+<ShowError ErrorMessage="@errorMessage" />
+
+@code {
+
+    private string errorMessage = "";
+    Category category = new Category();
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Focus("txtCategoryName");    
+        }
+    }
+
+    public async Task Focus(string elementId)
+    {
+        await js.InvokeVoidAsync("focusById", elementId);    
+    }
+
+    async Task CreateCategory()
+    {
+        try
+        {
+            var result = await client.PostAsJsonAsync("api/categories", category);
+            navigation.NavigateTo("categories");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;         
+        }
+    }
+}

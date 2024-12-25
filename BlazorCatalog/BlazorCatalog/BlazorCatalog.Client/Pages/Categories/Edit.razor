@@ -1,0 +1,29 @@
+﻿@inject HttpClient client;
+@inject NavigationManager navigation;
+
+<h2>Edit Category</h2>
+
+<CategoryForm Category="@category" OnValidSubmit="@EditCategory"
+              ButtonTextSubmit="Save" ButtonTextCancel="Cancel">
+</CategoryForm>
+
+@code {
+
+    [Parameter]
+    public int categoryid { get; set; }
+
+    Category category = new Category();
+
+    protected async override Task OnParametersSetAsync()
+    {
+        category = await client.GetFromJsonAsync<Category>(
+            $"api/category/{categoryid}") 
+            ?? new Category();    
+    }
+
+    async Task EditCategory()
+    {
+        await client.PutAsJsonAsync("api/category", category);
+        navigation.NavigateTo("category");
+    }
+}

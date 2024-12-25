@@ -1,0 +1,108 @@
+﻿@page "/categories"
+@using System.Text.Json
+@inject HttpClient client;
+
+<div>
+    <a class="btn btn-success" href="categories/create">New Category</a>
+</div>
+<br />
+
+@if (categories == null)
+{
+    <p><em>Loading ...</em></p>
+}
+else if (categories.Count == 0)
+{
+    <p><em>There are no registered categories</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var category in categories)
+            {
+                <tr>
+                    <td>@category.Name</td>
+                    <td>@category.Description</td>
+                    <td><a class="btn btn-primary" href="categories/edit/@category.CategoryId">Edit</a></td>
+                    <td><a class="btn btn-danger" @onclick="@(() => DeleteCategory(category.CategoryId))" style="color:white">Delete</a></td>
+                </tr>    
+
+            }
+        </tbody>
+    </table>   
+}
+
+<Confirm @ref="confirm" onCancel="@CancelConfirm" onConfirm="@DeleteConfirm">
+    <div>Do you really want to delete this item?</div>
+</Confirm>
+
+<ShowError ErrorMessage="@errorMessage" />
+
+@code {
+
+    private string errorMessage = "";
+    List<Category>? categories { get; set; }
+
+    Confirm confirm = new Confirm();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+    }
+
+    public async Task LoadCategories()
+    {
+        try
+        {
+            var httpResponse = await client.GetAsync("api/categories");
+
+            var message = httpResponse.RequestMessage;
+            var error = httpResponse.StatusCode;
+            var alert = httpResponse.Content;
+
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                var responseString = await httpResponse.Content.ReadAsStringAsync();
+
+                categories = JsonSerializer.Deserialize<List<Category>>(responseString,
+                    new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    int categoryCode; 
+
+    void DeleteCategory(int categoryId)
+    {
+        confirm.Show();
+        categoryCode = categoryId;
+    }
+
+    async Task DeleteConfirm()
+    {
+        await client.DeleteAsync($"api/categories/{categoryCode}");
+        confirm.Hide();
+        await LoadCategories();
+    }
+
+    void CancelConfirm()
+    {
+        confirm.Hide();    
+    }    
+}
